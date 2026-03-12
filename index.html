@@ -319,9 +319,9 @@ const DEVIL_DEALS=[
 ];
 let devilPending=null;
 
-function devilDeal(){
+function devilDeal(preStats){
   const deal=DEVIL_DEALS[Math.floor(Math.random()*DEVIL_DEALS.length)];
-  devilPending=deal;
+  devilPending={deal,preStats};
   const ch=document.getElementById('char');
   ch.style.transition='none';ch.style.right='-40%';
   ch.src=CHARS.devil;
@@ -341,9 +341,14 @@ function answer(yes){
   if(busy||phase!=='question')return;busy=true;
   showYesNo(false);
   if(devilPending){
-    const deal=devilPending;
+    const devilData=devilPending;
+    const deal=devilData.deal;
     devilPending=null;
     if(yes){
+      // Restore stats to before journalist, then apply devil's price
+      S.gold=devilData.preStats.gold;
+      S.pop=devilData.preStats.pop;
+      S.happy=devilData.preStats.happy;
       if(deal.cost.gold)S.gold+=deal.cost.gold;
       if(deal.cost.pop)S.pop+=deal.cost.pop;
       if(deal.cost.happy)S.happy+=deal.cost.happy;
@@ -361,6 +366,7 @@ function answer(yes){
     return;
   }
   const wasJournalist=curQ.pt==='journalist';
+  const preJournalistStats={gold:S.gold,pop:S.pop,happy:S.happy};
   const r=yes?curQ.yes:curQ.no;
   S.gold+=r.gold;S.pop+=r.pop;S.happy+=r.happy;updStats();S.turn++;
   showDialog(curQ.sp,r.msg,false,()=>{
@@ -368,7 +374,7 @@ function answer(yes){
     if(S.gold<=0){showEnd('BANKRUPT','The treasury is empty. Chaos erupts. You are deposed.');return;}
     if(S.pop<=0){showEnd('DESERTED','Every soul has fled. You sit alone on an empty throne.');return;}
     if(S.happy<=0){showEnd('REVOLUTION','The people storm the palace. Your reign ends tonight.');return;}
-    if(wasJournalist){devilDeal();return;}
+    if(wasJournalist){devilDeal(preJournalistStats);return;}
     nextTurn();
   });
 }
